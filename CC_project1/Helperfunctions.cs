@@ -59,26 +59,59 @@ namespace CC_project1
 		}
 
 		// Method to Evaluate Conditions
+		//public static bool EvaluateCondition(string condition, List<SymbolTable> symbolTable)
+		//{
+		//	foreach (var symbol in symbolTable)
+		//	{
+		//		condition = condition.Replace(symbol.name, symbol.Value);
+		//	}
+		//	try
+		//	{
+		//		var result = new System.Data.DataTable().Compute(condition, null);
+		//		return Convert.ToBoolean(result);
+		//	}
+		//	catch
+		//	{
+		//		//txtError.Text += $"Invalid Condition: {condition}\n";
+		//		return false;
+		//	}
+		//}
+
 		public static bool EvaluateCondition(string condition, List<SymbolTable> symbolTable)
 		{
+			// Replace logical operators with DataTable.Compute-compatible operators
+			condition = condition.Replace("&&", "AND")
+								 .Replace("||", "OR")
+								 .Replace("==", "=")
+								 .Replace("!=", "<>")
+								 .Replace("true", "1")
+								 .Replace("false", "0");
+
+			// Replace symbols with their values
 			foreach (var symbol in symbolTable)
 			{
 				condition = condition.Replace(symbol.name, symbol.Value);
 			}
+
 			try
 			{
+				// Evaluate the condition
 				var result = new System.Data.DataTable().Compute(condition, null);
+
+				// Return the boolean result
 				return Convert.ToBoolean(result);
 			}
-			catch
+			catch (Exception ex)
 			{
-				//txtError.Text += $"Invalid Condition: {condition}\n";
+				// Log or handle invalid conditions
+				Console.WriteLine($"Invalid Condition: {condition}. Error: {ex.Message}");
 				return false;
 			}
 		}
 
+
 		//===========FOR SWITCH STATMENT=============
-        public static Queue<string> ParseBlock(string[] lines, ref int currentLine)
+		public static Queue<string> ParseBlock(string[] lines, ref int currentLine)
 		{
 			Queue<string> blockLines = new Queue<string>();
 

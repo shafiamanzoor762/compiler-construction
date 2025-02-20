@@ -54,6 +54,12 @@
     </Compile>
     <Compile Include="Helperfunctions.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Project.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Project.Designer.cs">
+      <DependentUpon>Project.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScopeSymbolTable.cs" />
     <Compile Include="SymbolTable.cs" />
@@ -65,6 +71,9 @@
     </Compile>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Project.resx">
+      <DependentUpon>Project.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

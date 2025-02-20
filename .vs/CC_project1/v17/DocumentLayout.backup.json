@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "F:\\semester_7\\CompilerConstruction\\CC_project1\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|F:\\semester_7\\CompilerConstruction\\CC_project1\\cc_project1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|f:\\semester_7\\compilerconstruction\\cc_project1\\cc_project1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|solutionrelative:cc_project1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|f:\\semester_7\\compilerconstruction\\cc_project1\\cc_project1\\helperfunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|F:\\semester_7\\CompilerConstruction\\CC_project1\\cc_project1\\helperfunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|solutionrelative:cc_project1\\helperfunctions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|F:\\semester_7\\CompilerConstruction\\CC_project1\\cc_project1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{5AA01286-F8C7-4295-8662-0FDDE7DE4E36}|CC_project1\\CC_project1.csproj|solutionrelative:cc_project1\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,8 +22,20 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Form1.cs [Design]",
+              "DocumentMoniker": "F:\\semester_7\\CompilerConstruction\\CC_project1\\CC_project1\\Form1.cs",
+              "RelativeDocumentMoniker": "CC_project1\\Form1.cs",
+              "ToolTip": "F:\\semester_7\\CompilerConstruction\\CC_project1\\CC_project1\\Form1.cs [Design]",
+              "RelativeToolTip": "CC_project1\\Form1.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-17T03:25:53.809Z",
+              "EditorCaption": " [Design]"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 1,
@@ -28,10 +44,9 @@
               "RelativeDocumentMoniker": "CC_project1\\Helperfunctions.cs",
               "ToolTip": "F:\\semester_7\\CompilerConstruction\\CC_project1\\CC_project1\\Helperfunctions.cs",
               "RelativeToolTip": "CC_project1\\Helperfunctions.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAC8AAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAEcAAAAAAAAAAAD4v1AAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-23T06:28:42.676Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-23T06:28:42.676Z"
             },
             {
               "$type": "Document",
@@ -41,7 +56,7 @@
               "RelativeDocumentMoniker": "CC_project1\\Form1.cs",
               "ToolTip": "F:\\semester_7\\CompilerConstruction\\CC_project1\\CC_project1\\Form1.cs",
               "RelativeToolTip": "CC_project1\\Form1.cs",
-              "ViewState": "AgIAAPYBAAAAAAAAAAAhwBYCAAADAAAAAAAAAA==",
+              "ViewState": "AgIAAMcCAAAAAAAAAAAWwNQCAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-10-31T18:23:36.294Z",
               "EditorCaption": ""

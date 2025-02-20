@@ -5,11 +5,13 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.LinkLabel;
 
 namespace CC_project1
 {
@@ -25,6 +27,7 @@ namespace CC_project1
 		}
 
 		string[] input;
+		Queue<string> exitLines = new Queue<string>();
 		int i = 0;
 		#region Regex
 		//initialization
@@ -86,14 +89,16 @@ namespace CC_project1
 		//Regex AILine = new Regex(@"^[\$]+[a-zA-Z][a-zA-Z0-9]*[' ']*=[' ']*[0-9][0-9]*[-+*/][0-9][0-9]*[0-9' '\\-+*/' '0-9]*;$");
 		Regex AILine = new Regex(@"^[\$]+[a-zA-Z][a-zA-Z0-9]*\s*=\s*[0-9]+[-+*/][0-9]+[0-9\s\-+*/\s0-9]*;$");
 		//for Constant and variables
-		Regex MAILine = new Regex(@"^[\$]+[a-zA-Z][a-zA-Z0-9]*[' ']*=[' ']*[a-zA-Z0-9][a-zA-Z0-9]*[-+*/][a-zA-Z0-9][a-zA-Z0-9]*[a-zA-Z0-9' '\-+*/ ' 'a-zA-Z0-9]*;$");
-
+		//Regex MAILine = new Regex(@"^[\$]+[a-zA-Z][a-zA-Z0-9]*[' ']*=[' ']*[a-zA-Z0-9][a-zA-Z0-9]*[-+*/][a-zA-Z0-9][a-zA-Z0-9]*[a-zA-Z0-9' '\-+*/ ' 'a-zA-Z0-9]*;$");
+		//Regex MAILine = new Regex(@"^[\$][a-zA-Z][a-zA-Z0-9]*\s*=\s*[\$]?[a-zA-Z][a-zA-Z0-9]*\s*[-+*/]\s*[\$]?[a-zA-Z0-9][a-zA-Z0-9]*\s*;$");
+		Regex MAILine = new Regex(@"^\$[a-zA-Z][a-zA-Z0-9]*\s*=\s*[\(\)\$\w\s\+\-\*/]+;$");
 		//For display Expresion
 		Regex DisplayExpression = new Regex(@"^display < (.+?)\s*;$");
 		//For variable Inilization with expression
 		//Regex MALine = new Regex(@"^([\$][a-zA-Z][a-zA-Z0-9])\s=\s*([$a-zA-Z0-9\s\+\-\*/]+);$");
 		// for @a =@a + 3;
-		Regex MALine = new Regex(@"^\$+[a-zA-Z][a-zA-Z0-9]*\s*=\s*\$?[a-zA-Z0-9]+\s*[-+/]\s*[0-9]+;$");
+		//Regex MALine = new Regex(@"^\$+[a-zA-Z][a-zA-Z0-9]*\s*=\s*\$?[a-zA-Z0-9]+\s*[-+/]\s*[0-9]+;$");
+		Regex MALine = new Regex(@"^\$[a-zA-Z][a-zA-Z0-9]*\s*=\s*[\(\)\$\w\s\+\-\*/]+;$");
 		//For Conditional Logic
 		private Regex IfCondition = new Regex(@"^is\((.+?)\)\s*\{");
 		private Regex ElseIfCondition = new Regex(@"^elis\((.+?)\)\s*\{");
@@ -106,6 +111,12 @@ namespace CC_project1
 		Regex optPattern = new Regex(@"opt\s+(?<case>.+?):");
 		Regex defaultPattern = new Regex(@"def:");
 
+		//array
+		Regex array = new Regex(@"(?<type>num|doub|boo|flo|chr)\s+\$(?<name>\w+)\s*=\s*new\s+(?<arrayType>num|doub|boo|flo|chr)\s*\[\s*(?<values>.*)\s*\];");
+
+		//loop
+		Regex loop = new Regex(@"loop\s*\(\s*num\s+\$(?<varName>\w+)\s*=\s*(?<start>\d+);\s*\$(?<varNameRef>\w+)\s*<\s*(?<end>\d+);\s*\$(?<varNameIncr>\w+)\s*\+\s*(?<increment>\d+)\s*\)");
+
 		#endregion
 
 
@@ -113,8 +124,10 @@ namespace CC_project1
 		List<ScopeSymbolTable> ScopeSymbolTable = new List<ScopeSymbolTable>();
 		bool build = true;
 		bool conditionSatisfied = false;
+		//array
+		private Dictionary<string, dynamic> SymbolTable = new Dictionary<string, dynamic>();
 
-		public void Validate(string line, string scope)
+		public void Validate(string[] allLines, string line, string scope)
 		{
 
 			string[] words = line.Split(' ');
@@ -191,11 +204,11 @@ namespace CC_project1
 					//symbolTable.Add(st2);
 					ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault().SymbolTable.Add(st2);
 				}
-				else
-				{
-					txtError.Text += $"Error at Line: {line}";
-					txtOutput.Text = "Build Failed";
-				}
+				//else
+				//{
+				//	txtError.Text += $"Error at Line: {line}";
+				//	txtOutput.Text = "Build Failed";
+				//}
 			}
 			else if (IntILine.IsMatch(line))
 			{
@@ -220,13 +233,15 @@ namespace CC_project1
 					ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault().SymbolTable.Where(x => x.name == Iwords[0].Trim()).FirstOrDefault().Value = ans.ToString();
 				}
 			}
-			else if (MAILine.IsMatch(line)){
+			else if (MAILine.IsMatch(line))
+			{
 				string[] Iwords = line.Split('=');
-				foreach (var sy in ScopeSymbolTable)
-				{
-					var ans = Evaluate(Iwords[1].Trim(new Char[] { ';' }), sy.SymbolTable);
+				List<SymbolTable> sy = ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault().SymbolTable;
+				//foreach (var sy in ScopeSymbolTable)
+				//{
+					var ans = Helperfunctions.EvaluateExpression(Iwords[1].Trim(new Char[] { ';' }), sy);
 					ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault().SymbolTable.Where(x => x.name == Iwords[0].Trim()).FirstOrDefault().Value = ans.ToString();
-				}
+				//}
 			}
 			#endregion
 
@@ -274,14 +289,15 @@ namespace CC_project1
 					//symbolTable.Add(st);
 					ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault().SymbolTable.Add(st);
 				}
-				else
-				{
-					txtError.Text += $"Error at Line: {line}";
-					txtOutput.Text = "Build Failed";
-					build = false;
-				}
+				//else
+				//{
+				//	txtError.Text += $"Error at Line: {line}";
+				//	txtOutput.Text = "Build Failed";
+				//	build = false;
+				//}
 			}
 			#endregion
+
 			#region Forchr
 			if (words[0] == "chr")
 			{
@@ -306,6 +322,7 @@ namespace CC_project1
 				txtOutput.AppendText("<" + words[2].Trim(new Char[] { ';' }) + ">" + "\n");
 			}
 			#endregion
+
 			#region Forstring
 			if (words[0] == "str")
 			{
@@ -329,6 +346,7 @@ namespace CC_project1
 				txtOutput.AppendText("<" + words[2].Trim(new Char[] { ';' }) + ">" + "\n");
 			}
 			#endregion
+
 			#region Fordoub
 			if (words[0] == "doub")
 			{
@@ -339,6 +357,7 @@ namespace CC_project1
 				}
 			}
 			#endregion
+
 			else if (ILine.IsMatch(line))
 			{
 				//string[] Iwords = line.Split('=');
@@ -438,20 +457,40 @@ namespace CC_project1
 				//txtOutput.AppendText(coutwords[2].Trim(new char[] { '\'' }) + v1.Value);
 
 				string[] coutwords = line.Split('\'');
-				if (ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault() != null)
+				//if (ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault() != null)
+				//{
+				//	txtOutput.AppendText(coutwords[1] + ScopeSymbolTable.Where(x => x.Scope ==
+				//	scope).FirstOrDefault().SymbolTable.Where(x => x.name == coutwords[2].Trim(new Char[] { ';', '+', ' ' })).FirstOrDefault().Value + "\r\n");
+				//}
+
+				var scopeEntry = ScopeSymbolTable.Where(x => x.Scope == scope).FirstOrDefault();
+				if (scopeEntry != null)
 				{
-					txtOutput.AppendText(coutwords[1] + ScopeSymbolTable.Where(x => x.Scope ==
-					scope).FirstOrDefault().SymbolTable.Where(x => x.name == coutwords[2].Trim(new Char[] { ';', '+', ' ' })).FirstOrDefault().Value + "\r\n");
+					var symbol = scopeEntry.SymbolTable?.Where(x => x.name == coutwords[2].Trim(new Char[] { ';', '+', ' ' })).FirstOrDefault();
+					if (symbol != null)
+					{
+						txtOutput.AppendText(coutwords[1] + symbol.Value + "\r\n");
 					}
+					else
+					{
+						txtOutput.AppendText($"Error: Variable {coutwords[2]} not found in scope {scope}.\r\n");
+					}
+				}
+				else
+				{
+					txtOutput.AppendText($"Error: Scope {scope} not found.\r\n");
+				}
+
 			}
 
 			// For If Condition
 			if (IfCondition.IsMatch(line))
 			{
 				string condition = IfCondition.Match(line).Groups[1].Value;
-				Queue<string> blockLines = ExtractBlock(input, ref i); // Extract block lines for the condition
-
+				Queue<string> blockLines = ExtractBlock(allLines, ref i); // Extract block lines for the condition
+				exitLines = blockLines;
 				ValidateConditionalBlock(condition, scope, blockLines);
+
 				return;
 			}
 
@@ -461,7 +500,8 @@ namespace CC_project1
 				if (ElseIfCondition.IsMatch(line))
 				{
 					string condition = ElseIfCondition.Match(line).Groups[1].Value;
-					Queue<string> blockLines = ExtractBlock(input, ref i); // Extract block lines for the condition
+					Queue<string> blockLines = ExtractBlock(allLines, ref i); // Extract block lines for the condition
+					
 					ValidateConditionalBlock(condition, scope, blockLines);
 					return;
 				}
@@ -472,8 +512,10 @@ namespace CC_project1
 				// For Else Condition
 				if (ElseCondition.IsMatch(line))
 				{
-					Queue<string> blockLines = ExtractBlock(input, ref i); // Extract block lines for the else block
+					Queue<string> blockLines = ExtractBlock(allLines, ref i); // Extract block lines for the else block
 					ValidateElseBlock(scope, blockLines);
+					exitLines = blockLines;
+					//conditionSatisfied = false;
 					return;
 				}
 			}
@@ -494,61 +536,144 @@ namespace CC_project1
 				ParseSwitch(lines, ref currentLine, scope);
 			}
 
-			else if (MALine.IsMatch(line))
+			//else if (MALine.IsMatch(line))
+			//{
+			//	// Logic for handling assignment expressions
+			//	//Match match = Regex.Match(line, @"^(\$[a-zA-Z][a-zA-Z0-9]*)\s*=\s*([$a-zA-Z0-9\s\+\-\*/]+);$");
+			//	Match match = Regex.Match(line, @"^\$[a-zA-Z][a-zA-Z0-9]*\s*=\s*[\(\)\$\w\s\+\-\*/]+;$");
+			//	string leftVar = match.Groups[1].Value; // Full variable name (e.g., @a)
+			//	string rightExpression = match.Groups[2].Value; // Expression on the right-hand side
+
+			//	// Find the correct scope and symbol table
+			//	ScopeSymbolTable currentScope = ScopeSymbolTable
+			//		.Where(x => x.Scope == scope)
+			//		.FirstOrDefault();
+
+			//	if (currentScope != null)
+			//	{
+			//		// Find the left-hand variable in the symbol table
+			//		SymbolTable leftSymbol = currentScope.SymbolTable
+			//			.Find(sym => sym.name == leftVar);
+
+			//		if (leftSymbol != null)
+			//		{
+			//			// Resolve the right-hand expression
+			//			string resolvedExpression = ResolveExpression(rightExpression, currentScope.SymbolTable);
+			//			//string sendexp = leftSymbol.name+ "=" + resolvedExpression;
+
+			//			// Remove all spaces from the expression
+			//			string exp = resolvedExpression.Replace(" ", string.Empty);
+			//			// Evaluate the resolved expression
+			//			double result = Helperfunctions.EvaluateExpression(exp, currentScope.SymbolTable);
+
+			//			// Update the variable value in the symbol table
+			//			leftSymbol.Value = result.ToString();
+			//			Console.WriteLine($"Updated {leftVar} to {result}");
+			//		}
+			//	}
+			//	else
+			//	{
+			//		Console.WriteLine($"Scope {scope} not found.");
+			//	}
+			//}
+			else if (array.IsMatch(line))
 			{
-				// Logic for handling assignment expressions
-				Match match = Regex.Match(line, @"^($[a-zA-Z][a-zA-Z0-9])\s=\s*([$a-zA-Z0-9\s\+\-\*/]+);$");
-				string leftVar = match.Groups[1].Value; // Full variable name (e.g., @a)
-				string rightExpression = match.Groups[2].Value; // Expression on the right-hand side
+				var match1 = Regex.Match(line, @"(?<type>num|doub|boo|flo|chr)\s+\$(?<name>\w+)\s*=\s*new\s+(?<arrayType>num|doub|boo|flo|chr)\s*\[\s*(?<values>.*)\s*\];");
+				// Extract parts from the match
+				string type = match1.Groups["type"].Value;
+				string name = match1.Groups["name"].Value;
+				string arrayType = match1.Groups["arrayType"].Value;
+				string values = match1.Groups["values"].Value;
 
-				// Find the correct scope and symbol table
-				ScopeSymbolTable currentScope = ScopeSymbolTable
-					.Where(x => x.Scope == scope)
-					.FirstOrDefault();
-
-				if (currentScope != null)
+				// Validate type and arrayType match
+				if (type != arrayType)
 				{
-					// Find the left-hand variable in the symbol table
-					SymbolTable leftSymbol = currentScope.SymbolTable
-						.Find(sym => sym.name == leftVar);
-
-					if (leftSymbol != null)
-					{
-						// Resolve the right-hand expression
-						string resolvedExpression = ResolveExpression(rightExpression, currentScope.SymbolTable);
-						//string sendexp = leftSymbol.name+ "=" + resolvedExpression;
-
-						// Remove all spaces from the expression
-						string exp = resolvedExpression.Replace(" ", string.Empty);
-						// Evaluate the resolved expression
-						double result = Evaluate(exp, currentScope.SymbolTable);
-
-						// Update the variable value in the symbol table
-						leftSymbol.Value = result.ToString();
-						Console.WriteLine($"Updated {leftVar} to {result}");
-					}
+					Console.WriteLine($"Type mismatch: {type} and {arrayType} do not match.");
+					return;
 				}
-				else
+
+				// Initialize the array based on the type
+				switch (type)
 				{
-					Console.WriteLine($"Scope {scope} not found.");
+					case "num":
+						SymbolTable[name] = ParseArray<int>(values);
+						break;
+					case "doub":
+						SymbolTable[name] = ParseArray<double>(values);
+						break;
+					case "boo":
+						SymbolTable[name] = ParseArray<bool>(values);
+						break;
+					case "flo":
+						SymbolTable[name] = ParseArray<float>(values);
+						break;
+					case "chr":
+						SymbolTable[name] = ParseArray<char>(values);
+						break;
+					default:
+						Console.WriteLine($"Unsupported type: {type}");
+						return;
 				}
+
+				txtSuggestions.Text += $"Array '{name}' of type '{type}' declared successfully.";
+				PrintArray(name);
 			}
+			//else
+			//{
+			//	Console.WriteLine($"Invalid array declaration syntax: {line}");
+			//	return;
+			//}
+
+			else if (loop.IsMatch(line))
+			{
+				string[] lines = txtInput.Text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+				int currentLine = Array.IndexOf(lines, line); // Find the starting line
+				ParseLoop(lines, ref currentLine, scope);
+			}
+			//DO WHILE LOOP
+			else if (line.StartsWith("doing"))
+			{
+				string[] lines = txtInput.Text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+				int currentLine = Array.IndexOf(lines, line); // Find the starting line
+				ParseDoWhileLoop(lines, ref currentLine, scope);
+			}
+
+			//WHILE LOOP
+			else if (line.StartsWith("when ("))
+			{
+				string[] lines = txtInput.Text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+				int currentLine = Array.IndexOf(lines, line); // Find the starting line
+				ParseWhileLoop(lines, ref currentLine, scope);
+			}
+
+			//FUNCTION
+			if (line.StartsWith("void ^"))
+			{
+				string[] lines = txtInput.Text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+				int currentLine = Array.IndexOf(lines, line); // Find the starting line
+				ParseFunctionDeclaration(lines, ref i);
+			}
+			else if (line.StartsWith("des ^"))
+			{
+				ParseFunctionCall(line, scope);
+			}
+
 
 			//For Display Expression
-			else if (DisplayExpression.IsMatch(line))
-			{
-				string expression = DisplayExpression.Match(line).Groups[1].Value;
-				foreach (var scopeTable in ScopeSymbolTable)
-				{
-					if (scopeTable.Scope == scope)
-					{
-						string result = Helperfunctions.ParseDisplayExpression(expression, scopeTable.SymbolTable);
-						txtOutput.AppendText($"{result}\n");
-						return;
-					}
-				}
-				//txtError.Text += $"Scope not found for expression: {expression}\n";
-			}
+			//else if (DisplayExpression.IsMatch(line))
+			//{
+			//	string expression = DisplayExpression.Match(line).Groups[1].Value;
+			//	foreach (var scopeTable in ScopeSymbolTable)
+			//	{
+			//		if (scopeTable.Scope == scope)
+			//		{
+			//			string result = Helperfunctions.ParseDisplayExpression(expression, scopeTable.SymbolTable);
+			//			txtOutput.AppendText($"{result}\n");
+			//			return;
+			//		}
+			//	}
+			//	//txtError.Text += $"Scope not found for expression: {expression}\n";
+			//}
 
 			//else
 			//{
@@ -567,6 +692,7 @@ namespace CC_project1
 			txtOutput.Text = "";
 			txtError.Text = "";
 			txtScope.Text = "";
+			conditionSatisfied = false;
 			int Sn = 0;
 			ScopeSymbolTable = new List<ScopeSymbolTable>();
 			ScopeSymbolTable GlobalSymbolTable = new ScopeSymbolTable
@@ -581,7 +707,7 @@ namespace CC_project1
 			{
 				if (Input[i] != "{")
 				{
-					Validate(Input[i], "Global");
+					Validate(Input, Input[i], "Global");
 					if (build == false)
 					{
 						txtOutput.Text = "Build Failed ";
@@ -598,7 +724,8 @@ namespace CC_project1
 					i++;
 					while (Input[i] != "}")
 					{
-						Validate(Input[i], "Scope" + Sn);
+						Validate(Input, Input[i], "Global");
+						//Validate(Input[i], "Scope" + Sn);
 						if (build == false)
 						{
 							txtOutput.Text ="Build Failed ";
@@ -628,114 +755,6 @@ namespace CC_project1
 			}
 			#endregion
 		 }
-
-	//	public double Evaluate(string input, List<SymbolTable> symbolTable)
-	//	{
-	//		// Precedence map for operators
-	//		var precedence = new Dictionary<string, int>
-	//{
-	//	{ "+", 1 },
-	//	{ "-", 1 },
-	//	{ "*", 2 },
-	//	{ "/", 2 },
-	//	{ "sqrt", 3 }
-	//};
-
-	//		Stack<string> ops = new Stack<string>();
-	//		Stack<double> vals = new Stack<double>();
-
-	//		string expr = "(" + input.Trim() + ")";
-
-	//		for (int i = 0; i < expr.Length; i++)
-	//		{
-	//			string s = expr.Substring(i, 1);
-
-	//			if (string.IsNullOrWhiteSpace(s))
-	//				continue;
-
-	//			if (s.Equals("("))
-	//			{
-	//				ops.Push(s);
-	//			}
-	//			else if (s.Equals(")"))
-	//			{
-	//				while (ops.Peek() != "(")
-	//				{
-	//					EvaluateTopOperation(ops, vals);
-	//				}
-	//				ops.Pop();
-	//			}
-	//			else if (precedence.ContainsKey(s))
-	//			{
-	//				while (ops.Count > 0 && ops.Peek() != "(" && precedence[ops.Peek()] >= precedence[s])
-	//				{
-	//					EvaluateTopOperation(ops, vals);
-	//				}
-	//				ops.Push(s);
-	//			}
-	//			else
-	//			{
-	//				string operand = s;
-	//				while (i + 1 < expr.Length && char.IsLetterOrDigit(expr[i + 1]))
-	//				{
-	//					operand += expr[++i];
-	//				}
-
-	//				if (double.TryParse(operand, out double value))
-	//				{
-	//					vals.Push(value);
-	//				}
-	//				else
-	//				{
-	//					var symbol = symbolTable.FirstOrDefault(x => x.name == operand);
-	//					if (symbol != null)
-	//					{
-	//						vals.Push(Double.Parse(symbol.Value)); // Use double-typed Value
-	//					}
-	//					else
-	//					{
-	//						throw new ArgumentException($"Unknown symbol: {operand}");
-	//					}
-	//				}
-	//			}
-	//		}
-
-	//		while (ops.Count > 0)
-	//		{
-	//			EvaluateTopOperation(ops, vals);
-	//		}
-
-	//		return vals.Pop();
-	//	}
-
-	//	private void EvaluateTopOperation(Stack<string> ops, Stack<double> vals)
-	//	{
-	//		string op = ops.Pop();
-	//		double v = vals.Pop();
-
-	//		switch (op)
-	//		{
-	//			case "+":
-	//				v = vals.Pop() + v;
-	//				break;
-	//			case "-":
-	//				v = vals.Pop() - v;
-	//				break;
-	//			case "*":
-	//				v = vals.Pop() * v;
-	//				break;
-	//			case "/":
-	//				v = vals.Pop() / v;
-	//				break;
-	//			case "sqrt":
-	//				v = Math.Sqrt(v);
-	//				break;
-	//			default:
-	//				throw new ArgumentException($"Unsupported operator: {op}");
-	//		}
-
-	//		vals.Push(v);
-	//	}
 
 		//Check Duplicate Variable
 		void checkDuplicate(string line)
@@ -768,6 +787,8 @@ namespace CC_project1
 				txtOutput.AppendText(res);
 			}
 		}
+
+		//--------------------IF ELSE CONDITION
 
 		// Extract a block of lines enclosed in curly braces
 		private Queue<string> ExtractBlock(string[] inputLines, ref int currentIndex)
@@ -862,31 +883,14 @@ namespace CC_project1
 				else
 				{
 					// Validate and execute line in the current block
-					Validate(line, "Nested");
+					Validate(blockLines.ToArray(), line, "Global");
 				}
 			}
 		}
 
-		//For Switch Case
-		public void ExecuteSwitch(string switchValue, Dictionary<string, Queue<string>> cases, Queue<string> defaultCase, string scope)
-		{
-			double evaluatedValue = Helperfunctions.EvaluateExpression(switchValue, symbolTable);
-			string evaluatedValue_str = Convert.ToString(evaluatedValue);
 
-			if (cases.ContainsKey(evaluatedValue_str))
-			{
-				ExecuteBlock(symbolTable, cases[evaluatedValue_str]);
-			}
-			else if (defaultCase.Count > 0)
-			{
-				ExecuteBlock(symbolTable, defaultCase);
-			}
-			else
-			{
-				//txtOutput.AppendText($"No matching case and no default case for value: {evaluatedValue}\n");
-			}
-		}
 
+		//--------------------SWITCH CASE
 		public void ParseSwitch(string[] lines, ref int currentLine, string scope)
 		{
 			string switchValue = null;
@@ -896,7 +900,6 @@ namespace CC_project1
 			while (currentLine < lines.Length)
 			{
 				string line = lines[currentLine].Trim();
-
 				if (line.StartsWith("option"))
 				{
 					var match = Regex.Match(line, @"option\((?<val>.+?)\)");
@@ -906,55 +909,158 @@ namespace CC_project1
 					}
 					else
 					{
-						//txtError.Text += $"Invalid option syntax at line {currentLine + 1}.\n";
+						Console.WriteLine($"Invalid option syntax at line {currentLine + 1}.");
 						return;
 					}
+					currentLine++; // Increment here after processing the option line
 				}
+
 				else if (line.StartsWith("opt"))
 				{
 					var match = Regex.Match(line, @"opt\s+(?<case>\d+):");
 					if (match.Success)
 					{
 						string caseValue = match.Groups["case"].Value;
-						currentLine++;
-						Queue<string> caseBlock = Helperfunctions.ParseBlock(lines, ref currentLine);
+						currentLine++; // Move to the next line to start parsing the block
+						Queue<string> caseBlock = ParseBlock_switch(lines, ref currentLine);
+						//caseBlock.Dequeue();
 						if (!cases.ContainsKey(caseValue))
 						{
 							cases.Add(caseValue, caseBlock);
 						}
 						else
 						{
-							//txtError.Text += $"Duplicate case value '{caseValue}' at line {currentLine + 1}.\n";
+							Console.WriteLine($"Duplicate case value '{caseValue}' at line {currentLine + 1}.");
 						}
 					}
 					else
 					{
-						//txtError.Text += $"Invalid case syntax at line {currentLine + 1}.\n";
+						Console.WriteLine($"Invalid case syntax at line {currentLine + 1}.");
 					}
 				}
 				else if (line.StartsWith("def:"))
 				{
-					currentLine++;
-					defaultCase = Helperfunctions.ParseBlock(lines, ref currentLine);
+					currentLine++; // Move to the next line to start parsing the block
+					defaultCase = ParseBlock_switch(lines, ref currentLine);
 				}
 				else if (line == "}")
 				{
-					break; // End of switch block
+					currentLine++; // End of switch block
+					break;
 				}
 				else
 				{
-					currentLine++;
+					currentLine++; // Skip irrelevant lines
 				}
 			}
 
 			if (switchValue == null)
 			{
-				//txtError.Text += $"Switch value missing in option block.\n";
+				Console.WriteLine("Switch value missing in option block.");
 				return;
 			}
 
 			ExecuteSwitch(switchValue, cases, defaultCase, scope);
 		}
+
+		//for switch
+		private Queue<string> ParseBlock_switch(string[] lines, ref int currentLine)
+		{
+			Queue<string> blockLines = new Queue<string>();
+
+			while (currentLine < lines.Length)
+			{
+				string line = lines[currentLine].Trim();
+
+				if (line == "{" || line == "}")
+				{
+					currentLine++;
+					continue; // Ignore opening or closing braces
+				}
+				if (line == "break;")
+				{
+					break; // End of block
+				}
+				blockLines.Enqueue(line);
+				currentLine++;	
+			}
+
+			return blockLines;
+		}
+
+		private void ExecuteSwitch(string switchValue, Dictionary<string, Queue<string>> cases, Queue<string> defaultCase, string scope)
+		{
+			string evaluatedValue;
+
+			// Check if the switchValue is a variable (exists in the symbol table)
+			var symbolEntry = ScopeSymbolTable
+				.FirstOrDefault(s => s.Scope == scope)?
+				.SymbolTable
+				.FirstOrDefault(sym => sym.name == switchValue);
+
+			if (symbolEntry != null)
+			{
+				// Fetch the value directly from the symbol table
+				evaluatedValue = symbolEntry.Value;
+			}
+			else
+			{
+				// If not a variable, evaluate it as an expression
+				evaluatedValue = EvaluateExpression1(switchValue, "Global");
+			}
+
+			// Handle cases based on evaluatedValue
+			if (cases.ContainsKey(evaluatedValue))
+			{
+				foreach (var c in cases)
+				{
+					if (c.Key == evaluatedValue)
+					{
+						ExecuteBlock(symbolTable, c.Value);
+					}
+				}
+			}
+			else if (defaultCase.Count > 0)
+			{
+				ExecuteBlock(symbolTable, defaultCase);
+			}
+			else
+			{
+				Console.WriteLine($"No matching case and no default case for value: {evaluatedValue}");
+			}
+		}
+
+
+		public string EvaluateExpression1(string expression, string scope)
+		{
+			// Find the symbol table for the given scope
+			var symbolsInScope = ScopeSymbolTable.FirstOrDefault(s => s.Scope == scope)?.SymbolTable;
+
+			if (symbolsInScope == null || symbolsInScope.Count == 0)
+			{
+				throw new Exception($"No symbol table found for scope: {scope}");
+			}
+
+			// Replace variable names in the expression with their values
+			foreach (var symbol in symbolsInScope)
+			{
+				expression = expression.Replace(symbol.name, symbol.Value.ToString());
+			}
+
+			try
+			{
+				// Evaluate the final expression using DataTable
+				var result = new System.Data.DataTable().Compute(expression, null);
+				return result.ToString();
+			}
+			catch
+			{
+				throw new Exception($"Invalid expression: {expression}");
+			}
+		}
+
+
+		/// /////////
 
 		static string ResolveExpression(string expression, List<SymbolTable> symbolTable)
 		{
@@ -1042,7 +1148,7 @@ namespace CC_project1
 					else
 					{
 						// For variables, retrieve their value from the symbol table
-						SymbolTable variable = symbolTable.FirstOrDefault(sym => sym.name == token);
+						SymbolTable variable = symbolTable.FirstOrDefault(sym => sym.name == "$"+token);
 						if (variable != null)
 						{
 							vals.Push(Double.Parse(variable.Value)); // Push the value of the variable
@@ -1056,6 +1162,436 @@ namespace CC_project1
 			}
 
 			return vals.Pop(); // Return the final result
+		}
+
+		//--------------------ARRAY
+		private T[] ParseArray<T>(string values)
+		{
+			// If values are empty, return an empty array
+			if (string.IsNullOrWhiteSpace(values))
+			{
+				return new T[0];
+			}
+
+			// Parse the comma-separated values
+			string[] splitValues = values.Split(',');
+			T[] result = new T[splitValues.Length];
+
+			for (int i = 0; i < splitValues.Length; i++)
+			{
+				try
+				{
+					result[i] = (T)Convert.ChangeType(splitValues[i].Trim(), typeof(T));
+				}
+				catch
+				{
+					throw new Exception($"Invalid value '{splitValues[i]}' for type '{typeof(T).Name}'.");
+				}
+			}
+
+			return result;
+		}
+
+		public void PrintArray(string arrayName)
+		{
+			if (!SymbolTable.ContainsKey(arrayName))
+			{
+				Console.WriteLine($"Array '{arrayName}' not found.");
+				return;
+			}
+
+			var array = SymbolTable[arrayName];
+			txtArray.Text+=$"{arrayName}= [{string.Join(", ", array)}]\n";
+		}
+
+
+		//--------------------LOOP
+		public void ParseLoop(string[] lines, ref int currentLine, string scope)
+		{
+			// Match the loop syntax
+			var match = Regex.Match(lines[currentLine], @"loop\s*\(\s*num\s+\$(?<varName>\w+)\s*=\s*(?<start>\d+);\s*\$(?<varNameRef>\w+)\s*<\s*(?<end>\d+);\s*\$(?<varNameIncr>\w+)\s*\+\s*(?<increment>\d+)\s*\)");
+
+			if (!match.Success)
+			{
+				Console.WriteLine($"Invalid loop syntax: {lines[currentLine]}");
+				return;
+			}
+
+			// Extract loop components
+			string varName = match.Groups["varName"].Value;
+			int start = int.Parse(match.Groups["start"].Value);
+			int end = int.Parse(match.Groups["end"].Value);
+			int increment = int.Parse(match.Groups["increment"].Value);
+
+			// Ensure the variable references match
+			if (varName != match.Groups["varNameRef"].Value || varName != match.Groups["varNameIncr"].Value)
+			{
+				Console.WriteLine($"Invalid loop variable references in: {lines[currentLine]}");
+				return;
+			}
+
+			// Move to the next line to process the loop body
+			currentLine++;
+
+			// Parse the block of statements inside the loop
+			Queue<string> loopBody = ParseBlock(lines, ref currentLine);
+
+			// Execute the loop
+			for (int i = start; i < end; i += increment)
+			{
+				// Update the loop variable in the symbol table
+				UpdateSymbolTable("$"+varName, i, scope);
+
+				// Execute the block for each iteration
+				foreach (var scopeTable in ScopeSymbolTable)
+				{
+					ExecuteBlock_loop(scopeTable.SymbolTable, loopBody);
+				}
+			}
+		}
+
+		private void UpdateSymbolTable(string varName, int value, string scope)
+		{
+			var scopeTable = ScopeSymbolTable.FirstOrDefault(s => s.Scope == scope);
+			if (scopeTable != null)
+			{
+				var symbol = scopeTable.SymbolTable.FirstOrDefault(s => s.name == varName);
+				if (symbol != null)
+				{
+					symbol.Value = value.ToString();
+				}
+				else
+				{
+					scopeTable.SymbolTable.Add(new SymbolTable { name = varName, datatype = "num", Value = value.ToString() });
+				}
+			}
+			else
+			{
+				// If the scope doesn't exist, create it
+				ScopeSymbolTable.Add(new ScopeSymbolTable
+				{
+					Scope = scope,
+					SymbolTable = new List<SymbolTable>
+			{
+				new SymbolTable { name = varName, datatype = "num", Value = value.ToString() }
+			}
+				});
+			}
+		}
+
+
+		public void ExecuteBlock_loop(List<SymbolTable> symbolTable, Queue<string> blockLines)
+		{
+			Queue<string> blockCopy = new Queue<string>(blockLines);
+			
+			while (blockCopy.Count > 0)
+			{
+				string line = blockCopy.Dequeue();
+
+				// Handle nested blocks
+				if (line == "{")
+				{
+					// Create a new symbol table for the nested block
+					ScopeSymbolTable nestedScope = new ScopeSymbolTable
+					{
+						Scope = "Nested",
+						SymbolTable = new List<SymbolTable>()
+					};
+
+					ScopeSymbolTable.Add(nestedScope);
+
+					// Recursively execute nested block
+					ExecuteBlock_loop(nestedScope.SymbolTable, blockCopy);
+				}
+				//else if (line == "}")
+				//{
+				//	// End of current block
+				//	return;
+				//}
+				else if (line == "}")
+				{
+					// End of current block
+					continue;
+				}
+				else
+				{
+					// Validate and execute line in the current block
+					Validate(blockLines.ToArray(),line, "Global");
+					//just to delete all the lines of exitLines from blockLines
+					if (exitLines.Count > 0)
+					{
+						// Step 1: Convert exitLines into a HashSet for fast lookup
+						HashSet<string> exitSet = new HashSet<string>(exitLines);
+
+						// Step 2: Filter blockLines and rebuild it without lines present in exitSet
+						Queue<string> updatedBlockLines = new Queue<string>();
+
+						while (blockCopy.Count > 0)
+						{
+							string linee = blockCopy.Dequeue();
+							if (!exitSet.Contains(linee))
+							{
+								updatedBlockLines.Enqueue(linee);
+							}
+						}
+						blockCopy = updatedBlockLines;
+					}
+				}
+			}
+		}
+
+
+		//--------------------DO WHILE LOOP
+		public void ParseDoWhileLoop(string[] lines, ref int currentLine, string scope)
+		{
+			Queue<string> loopBlock = new Queue<string>();
+			string condition = null;
+
+			while (currentLine < lines.Length)
+			{
+				string line = lines[currentLine].Trim();
+
+				// Parse the "doing" block
+				if (line.StartsWith("doing"))
+				{
+					currentLine++; // Move past the "doing" line
+					loopBlock = ParseBlock(lines, ref currentLine); // Parse the block content
+				}
+				// Parse the "when(condition);" line
+				else if (line.StartsWith("when"))
+				{
+					var match = Regex.Match(line, @"when\s*\((?<condition>.+)\);");
+					if (match.Success)
+					{
+						condition = match.Groups["condition"].Value;
+						currentLine++; // Move past the "when" line
+						break; // Exit the loop as we have finished parsing the while loop
+					}
+					else
+					{
+						Console.WriteLine($"Invalid 'when' syntax at line {currentLine + 1}.");
+						return;
+					}
+				}
+				else
+				{
+					Console.WriteLine($"Unexpected syntax at line {currentLine + 1}: {line}");
+					currentLine++; // Skip the line and continue parsing
+				}
+			}
+
+			if (loopBlock.Count > 0 && condition != null)
+			{
+				ExecuteWhileLoop(loopBlock, condition, scope);
+			}
+			else
+			{
+				Console.WriteLine($"Error: Missing block or condition for 'while' loop at line {currentLine + 1}.");
+			}
+		}
+
+		private void ExecuteWhileLoop(Queue<string> loopBlock, string condition, string scope)
+		{
+			while (EvaluateCondition(condition, scope))
+			{
+				foreach (var scopeTable in ScopeSymbolTable)
+				{
+					// Execute the block
+					ExecuteBlock_loop(scopeTable.SymbolTable, new Queue<string>(loopBlock));
+				}
+				
+			}
+		}
+
+		private bool EvaluateCondition(string condition, string scope)
+		{
+			bool evaluated = false;
+			try
+			{
+				foreach (var scopeTable in ScopeSymbolTable)
+				{
+					evaluated = Helperfunctions.EvaluateCondition(condition, scopeTable.SymbolTable);
+				}
+				return evaluated;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error evaluating condition '{condition}': {ex.Message}");
+				return false;
+			}
+		}
+
+		private Queue<string> ParseBlock(string[] lines, ref int currentLine)
+		{
+			Queue<string> blockLines = new Queue<string>();
+
+			while (currentLine<lines.Length)
+			{
+				string line = lines[currentLine].Trim();
+
+				//if (line == "{" || line == "}")
+				//{
+				//	currentLine++;
+				//	continue; // Ignore opening or closing braces
+				//}
+				if (line == "} end when")
+				{
+					//currentLine++;
+					break; // End of block
+				}
+				blockLines.Enqueue(line);
+				currentLine++;
+			}
+
+			return blockLines;
+		}
+
+		//--------------------WHILE LOOP
+		private void ParseWhileLoop(string[] lines, ref int currentLine, string scope)
+		{
+			string condition = null;
+			Queue<string> loopBody = new Queue<string>();
+
+			// Parse the `when` loop
+			while (currentLine < lines.Length)
+			{
+				string line = lines[currentLine].Trim();
+
+				if (line.StartsWith("when ("))
+				{
+					var match = Regex.Match(line, @"when\s*\((?<condition>.+?)\)");
+					if (match.Success)
+					{
+						condition = match.Groups["condition"].Value;
+						currentLine++; // Move to the next line to parse the body
+					}
+					else
+					{
+						Console.WriteLine($"Invalid `when` loop syntax at line {currentLine + 1}.");
+						return;
+					}
+				}
+				else if (line == "{")
+				{
+					currentLine++; // Skip the opening brace
+					loopBody = ParseBlock(lines, ref currentLine);
+				}
+				else if (line == "} end when")
+				{
+					currentLine++; // Skip the closing brace
+					break; // End of loop parsing
+				}
+				else
+				{
+					Console.WriteLine($"Unexpected syntax at line {currentLine + 1}: {line}");
+					return;
+				}
+			}
+
+			// Execute the loop
+			if (condition != null && loopBody.Count > 0)
+			{
+				ExecuteWhileLoop(loopBody, condition, scope);
+			}
+			else
+			{
+				Console.WriteLine($"Incomplete `when` loop at line {currentLine + 1}.");
+			}
+		}
+
+
+		//--------------------FUNCTION
+		// Dictionary to store functions and their body
+		private Dictionary<string, Queue<string>> FunctionTable = new Dictionary<string, Queue<string>>();
+
+		// Method to parse function declaration
+		private void ParseFunctionDeclaration(string[] lines, ref int currentLine)
+		{
+			string functionName = null;
+			Queue<string> functionBody = new Queue<string>();
+
+			while (currentLine < lines.Length)
+			{
+				string line = lines[currentLine].Trim();
+
+				if (line.StartsWith("void ^"))
+				{
+					var match = Regex.Match(line, @"void \^(?<name>\w+)\s*\(\)");
+					if (match.Success)
+					{
+						functionName = match.Groups["name"].Value;
+						currentLine++; // Move to the next line to start parsing the function body
+					}
+					//else
+					//{
+					//	Console.WriteLine($"Invalid function declaration syntax at line {currentLine + 1}.");
+					//	return;
+					//}
+				}
+				else if (line == "{")
+				{
+					currentLine++; // Skip the opening brace
+					functionBody = ParseBlock(lines, ref currentLine);
+				}
+				//else if (line == "}")
+				//{
+				//	currentLine++; // Skip the closing brace
+				//	break; // End of function declaration
+				//}
+				//else
+				//{
+				//	Console.WriteLine($"Unexpected syntax at line {currentLine + 1}: {line}");
+				//	return;
+				//}
+				else
+				{
+					break;
+				}
+			}
+
+			if (functionName != null && functionBody.Count > 0)
+			{
+				if (!FunctionTable.ContainsKey(functionName))
+				{
+					FunctionTable.Add(functionName, functionBody);
+				}
+				else
+				{
+					Console.WriteLine($"Function '{functionName}' is already defined.");
+				}
+			}
+			else
+			{
+				Console.WriteLine($"Incomplete function declaration for '{functionName}'.");
+			}
+		}
+
+		private void ParseFunctionCall(string line, string scope)
+		{
+			var match = Regex.Match(line, @"des \^(?<name>\w+)\s*\(\);");
+			if (match.Success)
+			{
+				string functionName = match.Groups["name"].Value;
+
+				if (FunctionTable.ContainsKey(functionName))
+				{
+					ExecuteBlock(symbolTable, new Queue<string>(FunctionTable[functionName]));
+				}
+				else
+				{
+					Console.WriteLine($"Function '{functionName}' is not defined.");
+				}
+			}
+			else
+			{
+				Console.WriteLine($"Invalid function call syntax: {line}");
+			}
+		}
+
+
+		private void label4_Click(object sender, EventArgs e)
+		{
+
 		}
 	}
 }

@@ -30,3 +30,4 @@ F:\semester_7\CompilerConstruction\CC_project1\CC_project1\obj\Debug\CC_project1
 F:\semester_7\CompilerConstruction\CC_project1\CC_project1\obj\Debug\CC_project1.csproj.CoreCompileInputs.cache
 F:\semester_7\CompilerConstruction\CC_project1\CC_project1\obj\Debug\CC_project1.exe
 F:\semester_7\CompilerConstruction\CC_project1\CC_project1\obj\Debug\CC_project1.pdb
+F:\semester_7\CompilerConstruction\CC_project1\CC_project1\obj\Debug\CC_project1.Project.resources
