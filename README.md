@@ -3,14 +3,15 @@
 
 ## 🏷️ Badges
 
-![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
-![Windows Forms](https://img.shields.io/badge/Windows%20Forms-0078D7?style=for-the-badge&logo=windows&logoColor=white)
-![Compiler Design](https://img.shields.io/badge/Compiler%20Design-FFBF00?style=for-the-badge&logo=microgen&logoColor=white)
-![Lexical Analyzer](https://img.shields.io/badge/Lexical%20Analyzer-1E90FF?style=for-the-badge)
-![Parser](https://img.shields.io/badge/Parser-4B0082?style=for-the-badge)
-![Syntax Tree](https://img.shields.io/badge/Syntax%20Tree-228B22?style=for-the-badge)
-![Error Handling](https://img.shields.io/badge/Error%20Handling-B22222?style=for-the-badge)
-![Visual Studio](https://img.shields.io/badge/Visual%20Studio-5C2D91?style=for-the-badge&logo=visual-studio&logoColor=white)
+[![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
+[![Windows Forms](https://img.shields.io/badge/Windows%20Forms-0078D7?style=for-the-badge&logo=windows&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/desktop/winforms/)
+[![Compiler Design](https://img.shields.io/badge/Compiler%20Design-FFBF00?style=for-the-badge&logo=microgen&logoColor=white)](https://en.wikipedia.org/wiki/Compiler)
+[![Lexical Analyzer](https://img.shields.io/badge/Lexical%20Analyzer-1E90FF?style=for-the-badge)](https://en.wikipedia.org/wiki/Lexical_analysis)
+[![Parser](https://img.shields.io/badge/Parser-4B0082?style=for-the-badge)](https://en.wikipedia.org/wiki/Parsing)
+[![Syntax Tree](https://img.shields.io/badge/Syntax%20Tree-228B22?style=for-the-badge)](https://en.wikipedia.org/wiki/Abstract_syntax_tree)
+[![Error Handling](https://img.shields.io/badge/Error%20Handling-B22222?style=for-the-badge)](https://en.wikipedia.org/wiki/Exception_handling)
+[![Visual Studio](https://img.shields.io/badge/Visual%20Studio-5C2D91?style=for-the-badge&logo=visual-studio&logoColor=white)](https://visualstudio.microsoft.com/)
+
 
 ## 📌 Overview
 
