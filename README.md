@@ -1,6 +1,3 @@
-Here is a **complete, extensive, and structured README** file for your **Compiler Construction Project** built using **C# and Windows Forms**.
-
----
 
 # 🧠 Compiler Construction Project (C# Windows Forms)
 
@@ -175,7 +172,7 @@ CompilerProject/
 ├── CompilerEngine.cs  # Core logic (semantic analysis, evaluation)
 ├── RegexPatterns.cs   # Regex definitions for grammar
 ├── Program.cs         # App entry point
-├── CompilerProject.sln
+├── CC.sln
 └── README.md
 ```
 
